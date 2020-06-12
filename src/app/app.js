@@ -17,9 +17,9 @@ const parameters = {}
 const searchParams = new URLSearchParams(window.location.search);
 window.location.search
   .substr(1)
-  .split(`&`)
+  .split('&')
   .forEach(function (entry) {
-    var eq = entry.indexOf(`=`)
+    var eq = entry.indexOf('=')
     if (eq >= 0) {
       parameters[decodeURIComponent(entry.slice(0, eq))] = decodeURIComponent(
         entry.slice(eq + 1)
@@ -55,18 +55,6 @@ if (parameters.headers) {
   }
 }
 
-// Produce a Location query string from a parameter object.
-function locationQuery(params) {
-  return (
-    `?` +
-    Object.keys(params)
-      .map(function (key) {
-        return encodeURIComponent(key) + `=` + encodeURIComponent(params[key])
-      })
-      .join(`&`)
-  )
-}
-
 const fetchURL = searchParams.get('endpoint');
 function graphQLFetcher(graphQLParams, opts = { headers: {} }) {
   let headers = opts.headers;
@@ -75,16 +63,23 @@ function graphQLFetcher(graphQLParams, opts = { headers: {} }) {
     headers = JSON.parse(opts.headers);
   }
   return fetch(fetchURL, {
-    method: `post`,
+    method: 'post',
     headers: {
       Accept: 'application/json',
-      "Content-Type": 'application/json',
+      'Content-Type': 'application/json',
       ...headers,
     },
     body: JSON.stringify(graphQLParams),
+    credentials: 'omit',
   }).then(function (response) {
-    return response.json()
-  })
+    return response.text();
+  }).then(function (responseBody) {
+      try {
+        return JSON.parse(responseBody);
+      } catch (error) {
+        return responseBody;
+      }
+    });
 }
 
 // When the query and variables string is edited, update the URL bar so
@@ -101,6 +96,20 @@ function onEditOperationName(newOperationName) {
   parameters.operationName = newOperationName
   updateURL()
 }
+// Produce a Location query string from a parameter object.
+function locationQuery(params) {
+  return (
+    '?' +
+    Object.keys(params)
+      .filter(function (key) {
+        return Boolean(params[key]);
+      })
+      .map(function (key) {
+        return encodeURIComponent(key) + '=' + encodeURIComponent(params[key])
+      })
+      .join('&')
+  )
+}
 function updateURL() {
   history.replaceState(null, null, locationQuery(parameters))
 }
@@ -112,17 +121,17 @@ function updateURL() {
 //  - default empty query
 const DEFAULT_QUERY =
   parameters.query ||
-  (window.localStorage && window.localStorage.getItem(`graphiql:query`)) ||
+  (window.localStorage && window.localStorage.getItem('graphiql:query')) ||
   undefined
 
 const DEFAULT_VARIABLES =
   parameters.variables ||
-  (window.localStorage && window.localStorage.getItem(`graphiql:variables`)) ||
+  (window.localStorage && window.localStorage.getItem('graphiql:variables')) ||
   undefined
 
 const DEFAULT_HEADERS =
   parameters.headers ||
-  (window.localStorage && window.localStorage.getItem(`graphiql:headers`)) ||
+  (window.localStorage && window.localStorage.getItem('graphiql:headers')) ||
   undefined
 
 const QUERY_EXAMPLE_SITEMETADATA_TITLE = `#     {
@@ -196,6 +205,7 @@ class App extends React.Component {
     query: DEFAULT_QUERY,
     variables: DEFAULT_VARIABLES,
     headers: DEFAULT_HEADERS,
+    endpoint: fetchURL,
     explorerIsOpen: storedExplorerPaneState,
     codeExporterIsOpen: storedCodeExporterPaneState,
   }
@@ -334,7 +344,7 @@ class App extends React.Component {
   }
 
   render() {
-    const { query, variables, headers, schema, codeExporterIsOpen } = this.state
+    const { query, variables, headers, endpoint, schema, codeExporterIsOpen } = this.state
     const codeExporter = codeExporterIsOpen ? (
       <CodeExporter
         hideCodeExporter={this._handleToggleExporter}
@@ -393,6 +403,7 @@ class App extends React.Component {
               label="Code Exporter"
               title="Toggle Code Exporter"
             />
+            <span style={{ alignSelf: 'center' }}>Endpoint: <strong>{endpoint}</strong></span>
           </GraphiQL.Toolbar>
         </GraphiQL>
         {codeExporter}
@@ -401,4 +412,4 @@ class App extends React.Component {
   }
 }
 
-ReactDOM.render(<App />, document.getElementById(`root`))
+ReactDOM.render(<App />, document.getElementById('root'))
