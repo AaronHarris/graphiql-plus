@@ -26,6 +26,35 @@ window.location.search
       )
     }
   })
+
+  // If variables was provided, try to format it.
+if (parameters.variables) {
+  try {
+    parameters.variables = JSON.stringify(
+      JSON.parse(parameters.variables),
+      null,
+      2,
+    );
+  } catch (e) {
+    // Do nothing, we want to display the invalid JSON as a string, rather
+    // than present an error.
+  }
+}
+
+// If headers was provided, try to format it.
+if (parameters.headers) {
+  try {
+    parameters.headers = JSON.stringify(
+      JSON.parse(parameters.headers),
+      null,
+      2,
+    );
+  } catch (e) {
+    // Do nothing, we want to display the invalid JSON as a string, rather
+    // than present an error.
+  }
+}
+
 // Produce a Location query string from a parameter object.
 function locationQuery(params) {
   return (
@@ -38,32 +67,19 @@ function locationQuery(params) {
   )
 }
 
-// Derive a fetch URL from the current URL, sans the GraphQL parameters.
-const graphqlParamNames = {
-  query: true,
-  variables: true,
-  operationName: true,
-  explorerIsOpen: true,
-}
-const otherParams = {}
-for (var k in parameters) {
-  if (parameters.hasOwnProperty(k) && graphqlParamNames[k] !== true) {
-    otherParams[k] = parameters[k]
-  }
-}
 const fetchURL = searchParams.get('endpoint');
-let headers = new Headers();
-try {
-  headers = new Headers(JSON.parse(searchParams.get('headers')));
-} catch {};
-
-function graphQLFetcher(graphQLParams) {
+function graphQLFetcher(graphQLParams, opts = { headers: {} }) {
+  let headers = opts.headers;
+  // Convert headers to an object.
+  if (typeof headers === 'string') {
+    headers = JSON.parse(opts.headers);
+  }
   return fetch(fetchURL, {
     method: `post`,
     headers: {
       Accept: 'application/json',
       "Content-Type": 'application/json',
-      ...Object.fromEntries(headers.entries()),
+      ...headers,
     },
     body: JSON.stringify(graphQLParams),
   }).then(function (response) {
@@ -76,6 +92,10 @@ function graphQLFetcher(graphQLParams) {
 function onEditVariables(newVariables) {
   parameters.variables = newVariables
   updateURL()
+}
+function onEditHeaders(newHeaders) {
+  parameters.headers = newHeaders;
+  updateURL();
 }
 function onEditOperationName(newOperationName) {
   parameters.operationName = newOperationName
@@ -98,6 +118,11 @@ const DEFAULT_QUERY =
 const DEFAULT_VARIABLES =
   parameters.variables ||
   (window.localStorage && window.localStorage.getItem(`graphiql:variables`)) ||
+  undefined
+
+const DEFAULT_HEADERS =
+  parameters.headers ||
+  (window.localStorage && window.localStorage.getItem(`graphiql:headers`)) ||
   undefined
 
 const QUERY_EXAMPLE_SITEMETADATA_TITLE = `#     {
@@ -170,6 +195,7 @@ class App extends React.Component {
     schema: null,
     query: DEFAULT_QUERY,
     variables: DEFAULT_VARIABLES,
+    headers: DEFAULT_HEADERS,
     explorerIsOpen: storedExplorerPaneState,
     codeExporterIsOpen: storedCodeExporterPaneState,
   }
@@ -308,7 +334,7 @@ class App extends React.Component {
   }
 
   render() {
-    const { query, variables, schema, codeExporterIsOpen } = this.state
+    const { query, variables, headers, schema, codeExporterIsOpen } = this.state
     const codeExporter = codeExporterIsOpen ? (
       <CodeExporter
         hideCodeExporter={this._handleToggleExporter}
@@ -324,6 +350,9 @@ class App extends React.Component {
           schema={schema}
           query={query}
           onEdit={this._handleEditQuery}
+          onRunOperation={operationName =>
+            this._graphiql.handleRunQuery(operationName)
+          }
           explorerIsOpen={this.state.explorerIsOpen}
           onToggleExplorer={this._handleToggleExplorer}
           onRunOperation={operationName =>
@@ -336,9 +365,12 @@ class App extends React.Component {
           schema={schema}
           query={query}
           variables={variables}
+          headers={headers}
           onEditQuery={this._handleEditQuery}
           onEditVariables={onEditVariables}
+          onEditHeaders={onEditHeaders}
           onEditOperationName={onEditOperationName}
+          headerEditorEnabled={true}
         >
           <GraphiQL.Toolbar>
             <GraphiQL.Button
