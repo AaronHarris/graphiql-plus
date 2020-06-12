@@ -6,12 +6,17 @@
     <meta name="robots" content="noindex" />
     <meta name="referrer" content="origin" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" href="./favicon.png" />
   </head>
-  <body>
-    <div id="root" class="graphiql-container">Loading...</div>
+  <body style="background-color: rgb(246, 247, 248);">
+    <div id="root" class="graphiql-container">
+      <div style="font-family: 'Open Sans', sans-serif; margin: auto; color: rgba(25, 26, 27, 0.9); text-align: center;">
+        <span style="font-size: 32px; font-weight: 400;">Loading Graph<em>i</em>QL</span>
+      </div>
+    </div>
     <script
       type="text/javascript"
-      src="/___graphql/<%= htmlWebpackPlugin.files.chunks.main.entry %>?<%= htmlWebpackPlugin.files.chunks.main.hash %>"
+      src="<%= htmlWebpackPlugin.files.chunks.main.entry %>?<%= htmlWebpackPlugin.files.chunks.main.hash %>"
     ></script>
   </body>
 </html>
