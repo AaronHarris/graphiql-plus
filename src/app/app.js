@@ -14,6 +14,7 @@ import "./app.css"
 import "graphiql-code-exporter/CodeExporter.css"
 
 const parameters = {}
+const searchParams = new URLSearchParams(window.location.search);
 window.location.search
   .substr(1)
   .split(`&`)
@@ -50,17 +51,21 @@ for (var k in parameters) {
     otherParams[k] = parameters[k]
   }
 }
-const fetchURL = locationQuery(otherParams)
+const fetchURL = searchParams.get('endpoint');
+let headers = new Headers();
+try {
+  headers = new Headers(JSON.parse(searchParams.get('headers')));
+} catch {};
 
 function graphQLFetcher(graphQLParams) {
   return fetch(fetchURL, {
     method: `post`,
     headers: {
-      Accept: `application/json`,
-      "Content-Type": `application/json`,
+      Accept: 'application/json',
+      "Content-Type": 'application/json',
+      ...Object.fromEntries(headers.entries()),
     },
     body: JSON.stringify(graphQLParams),
-    credentials: `include`,
   }).then(function (response) {
     return response.json()
   })
