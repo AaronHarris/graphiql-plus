@@ -18,6 +18,22 @@ code {
   width: 100vw;
 }
 
-div.graphiql-explorer-root > div:last-child {
-  display: none;
+div.graphiql-explorer-root {
+  padding: 0 !important;
+}
+div.graphiql-explorer-root > :first-child {
+  padding: 8px !important;
+  overflow: auto scroll !important;
+}
+.graphiql-explorer-root > div:last-child {
+  min-height: 40px !important;
+  max-height: 40px !important;
+}
+.graphiql-explorer-actions {
+  margin: 0 !important;
+  padding: 3px 8px !important;
+  width: unset !important;
+}
+.graphiql-explorer-actions > * {
+  margin-right: 5px;
 }
