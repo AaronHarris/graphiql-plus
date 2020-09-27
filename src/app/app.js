@@ -27,7 +27,7 @@ window.location.search
     }
   })
 
-  // If variables was provided, try to format it.
+  // If `variables` was provided, try to format it.
 if (parameters.variables) {
   try {
     parameters.variables = JSON.stringify(
@@ -41,7 +41,7 @@ if (parameters.variables) {
   }
 }
 
-// If headers was provided, try to format it.
+// If `headers` was provided, try to format it.
 if (parameters.headers) {
   try {
     parameters.headers = JSON.stringify(
@@ -55,15 +55,14 @@ if (parameters.headers) {
   }
 }
 
-const fetchURL = searchParams.get('endpoint');
 function graphQLFetcher(graphQLParams, opts = { headers: {} }) {
   let headers = opts.headers;
   // Convert headers to an object.
   if (typeof headers === 'string') {
     headers = JSON.parse(opts.headers);
   }
-  return fetch(fetchURL, {
-    method: 'post',
+  return fetch(parameters.endpoint, {
+    method: 'POST',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -71,15 +70,9 @@ function graphQLFetcher(graphQLParams, opts = { headers: {} }) {
     },
     body: JSON.stringify(graphQLParams),
     credentials: 'omit',
-  }).then(function (response) {
-    return response.text();
-  }).then(function (responseBody) {
-      try {
-        return JSON.parse(responseBody);
-      } catch (error) {
-        return responseBody;
-      }
-    });
+  }).then(response =>
+    response.clone().json().catch(() => response.text())
+  );
 }
 
 // When the query and variables string is edited, update the URL bar so
@@ -129,56 +122,20 @@ const DEFAULT_VARIABLES =
   (window.localStorage && window.localStorage.getItem('graphiql:variables')) ||
   undefined
 
+const DEFAULT_OPERATION_NAME =
+  parameters.operationName ||
+  (window.localStorage && window.localStorage.getItem('graphiql:operationName')) ||
+  undefined
+
 const DEFAULT_HEADERS =
   parameters.headers ||
   (window.localStorage && window.localStorage.getItem('graphiql:headers')) ||
   undefined
 
-const QUERY_EXAMPLE_SITEMETADATA_TITLE = `#     {
-#       site {
-#         siteMetadata {
-#           title
-#         }
-#       }
-#     }`
-
-const QUERY_EXAMPLE_FALLBACK = `#     {
-#       allSitePage {
-#         nodes {
-#           path
-#         }
-#       }
-#     }`
-
-function generateDefaultFallbackQuery(queryExample) {
-  return `# Welcome to GraphiQL
-#
-# GraphiQL is an in-browser tool for writing, validating, and
-# testing GraphQL queries.
-#
-# Type queries into this side of the screen, and you will see intelligent
-# typeaheads aware of the current GraphQL type schema and live syntax and
-# validation errors highlighted within the text.
-#
-# GraphQL queries typically start with a "{" character. Lines that starts
-# with a # are ignored.
-#
-# An example GraphQL query might look like:
-#
-${queryExample}
-#
-# Keyboard shortcuts:
-#
-#  Prettify Query:  Shift-Ctrl-P (or press the prettify button above)
-#
-#     Merge Query:  Shift-Ctrl-M (or press the merge button above)
-#
-#       Run Query:  Ctrl-Enter (or press the play button above)
-#
-#   Auto Complete:  Ctrl-Space (or just start typing)
-#
-`
-}
+const DEFAULT_ENDPOINT =
+  parameters.endpoint ||
+  (window.localStorage && window.localStorage.getItem('graphiql:endpoint')) ||
+  undefined
 
 const storedExplorerPaneState =
   typeof parameters.explorerIsOpen !== `undefined`
@@ -204,8 +161,9 @@ class App extends React.Component {
     schema: null,
     query: DEFAULT_QUERY,
     variables: DEFAULT_VARIABLES,
+    operationName: DEFAULT_OPERATION_NAME,
     headers: DEFAULT_HEADERS,
-    endpoint: fetchURL,
+    endpoint: DEFAULT_ENDPOINT,
     explorerIsOpen: storedExplorerPaneState,
     codeExporterIsOpen: storedCodeExporterPaneState,
   }
@@ -215,34 +173,6 @@ class App extends React.Component {
       query: getIntrospectionQuery(),
     }).then(result => {
       const newState = { schema: buildClientSchema(result.data) }
-
-      if (this.state.query === null) {
-        try {
-          const siteMetadataType = result.data.__schema.types.find(
-            type => type.name === `SiteSiteMetadata` && type.kind === `OBJECT`
-          )
-          if (siteMetadataType) {
-            const titleField = siteMetadataType.fields.find(
-              field =>
-                field.name === `title` &&
-                field.type &&
-                field.type.kind === `SCALAR` &&
-                field.type.name === `String`
-            )
-
-            if (titleField) {
-              newState.query = generateDefaultFallbackQuery(
-                QUERY_EXAMPLE_SITEMETADATA_TITLE
-              )
-            }
-          }
-          // eslint-disable-next-line no-empty
-        } catch {}
-        if (!newState.query) {
-          newState.query = generateDefaultFallbackQuery(QUERY_EXAMPLE_FALLBACK)
-        }
-      }
-
       this.setState(newState)
     })
 
@@ -254,7 +184,7 @@ class App extends React.Component {
   }
 
   _handleInspectOperation = (cm, mousePos) => {
-    const parsedQuery = parse(this.state.query || ``)
+    const parsedQuery = parse(this.state.query || '')
 
     if (!parsedQuery) {
       console.error(`Couldn't parse query document`)
@@ -344,7 +274,7 @@ class App extends React.Component {
   }
 
   render() {
-    const { query, variables, headers, endpoint, schema, codeExporterIsOpen } = this.state
+    const { query, variables, headers, endpoint, operationName, schema, codeExporterIsOpen, explorerIsOpen } = this.state
     const codeExporter = codeExporterIsOpen ? (
       <CodeExporter
         hideCodeExporter={this._handleToggleExporter}
@@ -359,11 +289,8 @@ class App extends React.Component {
         <GraphiQLExplorer
           schema={schema}
           query={query}
+          explorerIsOpen={explorerIsOpen}
           onEdit={this._handleEditQuery}
-          onRunOperation={operationName =>
-            this._graphiql.handleRunQuery(operationName)
-          }
-          explorerIsOpen={this.state.explorerIsOpen}
           onToggleExplorer={this._handleToggleExplorer}
           onRunOperation={operationName =>
             this._graphiql.handleRunQuery(operationName)
@@ -376,6 +303,7 @@ class App extends React.Component {
           query={query}
           variables={variables}
           headers={headers}
+          operationName={operationName}
           onEditQuery={this._handleEditQuery}
           onEditVariables={onEditVariables}
           onEditHeaders={onEditHeaders}
