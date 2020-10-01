@@ -23,11 +23,11 @@ module.exports = {
               [
                 `@babel/preset-env`,
                 {
-                  corejs: 2,
+                  corejs: 3,
                   loose: true,
                   modules: `commonjs`,
                   useBuiltIns: `usage`,
-                  targets: [`>0.25%`, `not dead`],
+                  targets: [`>0.25%`, `not dead`, `Firefox ESR`],
                 },
               ],
               [
