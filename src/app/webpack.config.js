@@ -60,7 +60,8 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, `index.ejs`),
       filename: `index.html`,
-      inject: false,
+      hash: true,
+      favicon: './favicon.png',
     }),
     new webpack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify(mode),
