@@ -156,6 +156,7 @@ const storedCodeExporterPaneState =
       `true`
     : false
 
+const modifyableEndpoint = false;
 class App extends React.Component {
   state = {
     schema: null,
@@ -273,6 +274,30 @@ class App extends React.Component {
     this.setState({ codeExporterIsOpen: newCodeExporterIsOpen })
   }
 
+  /**
+   * Prompt user for new endpoint. Validate if new url, if entered, is valid.
+   */
+  _handleChooseEndpoint = (oldEndpoint = this.state.endpoint) => {
+    const endpoint = window.prompt('Choose the new GraphQL endpoint:', oldEndpoint);
+    if (endpoint != null && endpoint !== oldEndpoint) {
+      try {
+        new URL(endpoint); // throws TypeError if URL is invalid
+        parameters.endpoint = endpoint;
+        updateURL();
+        this.setState({ endpoint });
+        graphQLFetcher({
+          query: getIntrospectionQuery(),
+        }).then(result => {
+          const newState = { schema: buildClientSchema(result.data) }
+          this.setState(newState)
+        });
+      } catch {
+        window.alert('Invalid GraphQL URL, please try again.');
+        this._handleChooseEndpoint(endpoint);
+      }
+    }
+  };
+
   render() {
     const { query, variables, headers, endpoint, operationName, schema, codeExporterIsOpen, explorerIsOpen } = this.state
     const codeExporter = codeExporterIsOpen ? (
@@ -331,7 +356,12 @@ class App extends React.Component {
               label="Code Exporter"
               title="Toggle Code Exporter"
             />
-            <span style={{ alignSelf: 'center' }}>Endpoint: <strong>{endpoint}</strong></span>
+            {modifyableEndpoint ? <GraphiQL.Button
+              onClick={this._handleChooseEndpoint}
+              label="Change endpoint:"
+              title="Change endpoint"
+            />: null}
+            <span style={{ alignSelf: 'center' }}>{!modifyableEndpoint ? 'Endpoint: ' : null}<strong>{endpoint}</strong></span>
           </GraphiQL.Toolbar>
         </GraphiQL>
         {codeExporter}
