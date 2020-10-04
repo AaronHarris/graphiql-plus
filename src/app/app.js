@@ -5,7 +5,7 @@ import GraphiQL from "graphiql"
 import GraphiQLExplorer from "graphiql-explorer"
 import { getIntrospectionQuery, buildClientSchema, parse } from "graphql"
 import CodeExporter from "graphiql-code-exporter"
-import snippets from "./snippets"
+import defaultSnippets from "graphiql-code-exporter/lib/snippets"
 
 import "whatwg-fetch"
 
@@ -303,8 +303,9 @@ class App extends React.Component {
     const codeExporter = codeExporterIsOpen ? (
       <CodeExporter
         hideCodeExporter={this._handleToggleExporter}
-        snippets={snippets}
+        snippets={defaultSnippets}
         query={query}
+        serverUrl={endpoint}
         codeMirrorTheme="default"
       />
     ) : null
