@@ -75,20 +75,6 @@ function graphQLFetcher(graphQLParams, opts = { headers: {} }) {
   );
 }
 
-// When the query and variables string is edited, update the URL bar so
-// that it can be easily shared.
-function onEditVariables(newVariables) {
-  parameters.variables = newVariables
-  updateURL()
-}
-function onEditHeaders(newHeaders) {
-  parameters.headers = newHeaders;
-  updateURL();
-}
-function onEditOperationName(newOperationName) {
-  parameters.operationName = newOperationName
-  updateURL()
-}
 // Produce a Location query string from a parameter object.
 function locationQuery(params) {
   return (
@@ -156,7 +142,7 @@ const storedCodeExporterPaneState =
       `true`
     : false
 
-const modifyableEndpoint = false;
+const modifyableEndpoint = true;
 class App extends React.Component {
   state = {
     schema: null,
@@ -248,6 +234,26 @@ class App extends React.Component {
     this.setState({ query })
   }
 
+  // When the query and variables string is edited, update the URL bar so
+  // that it can be easily shared.
+  _onEditVariables = (newVariables) => {
+    parameters.variables = newVariables;
+    updateURL();
+    this.setState({ variables: newVariables });
+  }
+
+  _onEditHeaders = (newHeaders) => {
+    parameters.headers = newHeaders;
+    updateURL();
+    this.setState({ headers: newHeaders });
+  }
+
+  _onEditOperationName = (newOperationName) => {
+    parameters.operationName = newOperationName;
+    updateURL();
+    this.setState({ operationName: newOperationName });
+  }
+
   _handleToggleExplorer = () => {
     const newExplorerIsOpen = !this.state.explorerIsOpen
     if (window.localStorage) {
@@ -331,9 +337,9 @@ class App extends React.Component {
           headers={headers}
           operationName={operationName}
           onEditQuery={this._handleEditQuery}
-          onEditVariables={onEditVariables}
-          onEditHeaders={onEditHeaders}
-          onEditOperationName={onEditOperationName}
+          onEditVariables={this._onEditVariables}
+          onEditHeaders={this._onEditHeaders}
+          onEditOperationName={this._onEditOperationName}
           headerEditorEnabled={true}
         >
           <GraphiQL.Toolbar>
