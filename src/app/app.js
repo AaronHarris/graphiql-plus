@@ -13,7 +13,7 @@ import "graphiql/graphiql.css"
 import "./app.css"
 import "graphiql-code-exporter/CodeExporter.css"
 
-const parameters = {}
+window.parameters = {}
 const searchParams = new URLSearchParams(window.location.search);
 window.location.search
   .substr(1)
@@ -55,7 +55,7 @@ if (parameters.headers) {
   }
 }
 
-function graphQLFetcher(graphQLParams, opts = { headers: {} }) {
+function graphQLFetcher(graphQLParams, opts = { headers: {}, shouldPersistHeaders: true }) {
   let headers = opts.headers;
   // Convert headers to an object.
   if (typeof headers === 'string') {
@@ -75,6 +75,12 @@ function graphQLFetcher(graphQLParams, opts = { headers: {} }) {
   );
 }
 
+/**
+ * getJSON accepts a string representing JSON and returns the actual JSON object,
+ * or undefined if the string is not a valid JSON object
+ * @param {string} objectStr a string
+ * @returns an object represented by the JSON string or undefined
+ */
 function getJSON(objectStr) {
   try {
     if (objectStr && objectStr.trim() !== '') {
@@ -95,7 +101,7 @@ function locationQuery(params) {
         return Boolean(params[key]);
       })
       .map(function (key) {
-        return encodeURIComponent(key) + '=' + encodeURIComponent(params[key])
+        return `${encodeURIComponent(key)}=${encodeURIComponent(params[key].trim())}`
       })
       .join('&')
   )
@@ -104,6 +110,7 @@ function updateURL() {
   history.replaceState(null, null, locationQuery(parameters))
 }
 
+//#region Initialize Defaults
 // We control query, so we need to recreate initial query text that show up
 // on visiting graphiql - in order it will be
 //  - query from query string (if set)
@@ -152,7 +159,7 @@ const storedCodeExporterPaneState =
     ? window.localStorage.getItem(`graphiql:graphiqlCodeExporterOpen`) ===
       `true`
     : false
-
+//#endregion
 const modifyableEndpoint = true;
 class App extends React.Component {
   state = {
