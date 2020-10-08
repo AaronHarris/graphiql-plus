@@ -75,6 +75,17 @@ function graphQLFetcher(graphQLParams, opts = { headers: {} }) {
   );
 }
 
+function getJSON(objectStr) {
+  try {
+    if (objectStr && objectStr.trim() !== '') {
+      const parsedJson = JSON.parse(objectStr);
+      if (parsedJson && typeof parsedJson === 'object') {
+        return parsedJson;
+      }
+    }
+  } catch {}
+}
+
 // Produce a Location query string from a parameter object.
 function locationQuery(params) {
   return (
@@ -146,6 +157,7 @@ const modifyableEndpoint = true;
 class App extends React.Component {
   state = {
     schema: null,
+    headersObject: getJSON(DEFAULT_HEADERS) || undefined,
     query: DEFAULT_QUERY,
     variables: DEFAULT_VARIABLES,
     operationName: DEFAULT_OPERATION_NAME,
@@ -245,7 +257,12 @@ class App extends React.Component {
   _onEditHeaders = (newHeaders) => {
     parameters.headers = newHeaders;
     updateURL();
-    this.setState({ headers: newHeaders });
+    const newHeadersState = { headers: newHeaders };
+    const newHeadersObj = getJSON(newHeaders);
+    if (newHeaders.trim() === '' || newHeadersObj) {
+      newHeadersState.headersObject = newHeadersObj;
+    }
+    this.setState(newHeadersState);
   }
 
   _onEditOperationName = (newOperationName) => {
@@ -305,12 +322,13 @@ class App extends React.Component {
   };
 
   render() {
-    const { query, variables, headers, endpoint, operationName, schema, codeExporterIsOpen, explorerIsOpen } = this.state
+    const { query, variables, headers, headersObject, endpoint, operationName, schema, codeExporterIsOpen, explorerIsOpen } = this.state;
     const codeExporter = codeExporterIsOpen ? (
       <CodeExporter
         hideCodeExporter={this._handleToggleExporter}
         snippets={defaultSnippets}
         query={query}
+        headers={headersObject || undefined}
         serverUrl={endpoint}
         codeMirrorTheme="default"
       />
