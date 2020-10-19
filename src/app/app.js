@@ -56,7 +56,7 @@ if (parameters.headers) {
 }
 
 const INTROSPECTION_QUERY = getIntrospectionQuery().replace(/\n/g, '').replace(/\s/g, ' ').trim();
-function graphQLFetcher(graphQLParams, opts = { headers: {}, shouldPersistHeaders: true }) {
+window.graphQLFetcher = function graphQLFetcher(graphQLParams, opts = { headers: {}, shouldPersistHeaders: true }) {
   let headers = opts.headers;
   // Convert headers to an object.
   if (typeof headers === 'string') {
@@ -176,7 +176,7 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    graphQLFetcher({
+    window.graphQLFetcher({
       query: INTROSPECTION_QUERY,
     }, {
       headers: this.state.headers,
@@ -319,7 +319,7 @@ class App extends React.Component {
         parameters.endpoint = endpoint;
         updateURL();
         this.setState({ endpoint });
-        graphQLFetcher({
+        window.graphQLFetcher({
           query: INTROSPECTION_QUERY,
         }, {
           headers: this.state.headers
@@ -360,8 +360,8 @@ class App extends React.Component {
           }
         />
         <GraphiQL
-          ref={ref => (this._graphiql = ref)}
-          fetcher={graphQLFetcher}
+          ref={ref => (this._graphiql = window._graphiql = ref)}
+          fetcher={window.graphQLFetcher}
           schema={schema}
           query={query}
           variables={variables}
