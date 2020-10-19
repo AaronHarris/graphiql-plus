@@ -71,6 +71,28 @@ window.graphQLFetcher = function graphQLFetcher(graphQLParams, opts = { headers:
     },
     body: JSON.stringify(graphQLParams),
     credentials: 'omit',
+    mode: 'cors',
+  }).then(response =>
+    response.clone().json().catch(() => response.text())
+  );
+}
+
+window.graphQLGetFetcher = function graphQLGetFetcher(graphQLParams, opts = { headers: {}, shouldPersistHeaders: true }) {
+  let headers = opts.headers;
+  // Convert headers to an object.
+  if (typeof headers === 'string') {
+    headers = JSON.parse(opts.headers);
+  }
+  const queryString = new URLSearchParams(graphQLParams);
+  return fetch(`${parameters.endpoint}?${queryString.toString()}`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...headers,
+    },
+    credentials: 'omit',
+    mode: 'cors'
   }).then(response =>
     response.clone().json().catch(() => response.text())
   );
