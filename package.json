@@ -1,6 +1,6 @@
 {
   "name": "graphiql-plus",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "GraphiQL IDE with custom features for static hosting on the web",
   "main": "app.js",
   "scripts": {
