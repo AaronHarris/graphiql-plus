@@ -55,6 +55,7 @@ if (parameters.headers) {
   }
 }
 
+const INTROSPECTION_QUERY = getIntrospectionQuery().replace(/\n/g, '').replace(/\s/g, ' ').trim();
 function graphQLFetcher(graphQLParams, opts = { headers: {}, shouldPersistHeaders: true }) {
   let headers = opts.headers;
   // Convert headers to an object.
@@ -176,7 +177,9 @@ class App extends React.Component {
 
   componentDidMount() {
     graphQLFetcher({
-      query: getIntrospectionQuery(),
+      query: INTROSPECTION_QUERY,
+    }, {
+      headers: this.state.headers,
     }).then(result => {
       const newState = { schema: buildClientSchema(result.data) }
       this.setState(newState)
@@ -309,14 +312,17 @@ class App extends React.Component {
    */
   _handleChooseEndpoint = (oldEndpoint = this.state.endpoint) => {
     const endpoint = window.prompt('Choose the new GraphQL endpoint:', oldEndpoint);
-    if (endpoint != null && endpoint !== oldEndpoint) {
+    // Even if it's the same endpoint, re-run introspection in case the headers changed
+    if (endpoint != null) {
       try {
         new URL(endpoint); // throws TypeError if URL is invalid
         parameters.endpoint = endpoint;
         updateURL();
         this.setState({ endpoint });
         graphQLFetcher({
-          query: getIntrospectionQuery(),
+          query: INTROSPECTION_QUERY,
+        }, {
+          headers: this.state.headers
         }).then(result => {
           const newState = { schema: buildClientSchema(result.data) }
           this.setState(newState)
