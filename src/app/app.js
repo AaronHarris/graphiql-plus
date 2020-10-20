@@ -83,7 +83,20 @@ window.graphQLGetFetcher = function graphQLGetFetcher(graphQLParams, opts = { he
   if (typeof headers === 'string') {
     headers = JSON.parse(opts.headers);
   }
-  const queryString = new URLSearchParams(graphQLParams);
+  // Properly stringify variables parameter
+  const queryString = Object.entries(graphQLParams).reduce((searchParams, [queryParam, queryValue]) => {
+    if (typeof queryValue !== 'string') {
+      try {
+        queryValue = JSON.stringify(queryValue);
+      } catch {
+        queryValue = null
+      }
+    }
+    if (queryValue) {
+      searchParams.set(queryParam, queryValue);
+    }
+    return searchParams;
+  }, new URLSearchParams());
   return fetch(`${parameters.endpoint}?${queryString.toString()}`, {
     method: 'GET',
     headers: {
